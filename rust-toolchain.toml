@@ -1,0 +1,5 @@
+[toolchain]
+channel = "nightly-2022-04-01"
+#channel = "nightly"
+targets = ["thumbv7em-none-eabihf", "msp430-none-elf", "x86_64-unknown-linux-gnu", "thumbv7m-none-eabi"]
+components = [ "rust-src" ]

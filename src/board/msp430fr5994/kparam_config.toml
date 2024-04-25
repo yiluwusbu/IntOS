@@ -1,0 +1,115 @@
+#  Format [bench|default].[Optional: feature list]
+#  Config Parameters: 
+#  pm_heap_size_per_task
+#  boot_pm_heap_size
+#  pm_journal_size
+#  task_num_limit
+#  pm_heap_size
+
+[ar]
+pm_heap_size_per_task = 300
+pm_heap_size = 600
+
+[ar_base]
+pm_heap_size_per_task = 300
+pm_heap_size = 600
+
+[sense]
+pm_heap_size_per_task = 500
+boot_pm_heap_size = 256
+pm_heap_size = 1000
+
+[sense_base]
+pm_heap_size_per_task = 500
+boot_pm_heap_size = 256
+pm_heap_size = 1000
+
+[kv]
+pm_heap_size_per_task = 700
+# PM_HEAP_SIZE = PM_HEAP_SIZE_PER_TASK * (TASK_NUM_LIMIT - 1);
+pm_heap_size = 1400
+
+[kv_base]
+pm_heap_size_per_task = 700
+pm_heap_size = 1400
+
+[mq]
+task_num_limit = 5
+# PM_HEAP_SIZE = PM_HEAP_SIZE_PER_TASK * (TASK_NUM_LIMIT - 1);
+pm_heap_size = 1280
+
+[mq_base]
+task_num_limit = 5
+pm_heap_size = 1280
+
+[em]
+task_num_limit = 4
+# PM_HEAP_SIZE = PM_HEAP_SIZE_PER_TASK * (TASK_NUM_LIMIT - 1);
+pm_heap_size = 1024
+
+[em_base]
+task_num_limit = 4
+pm_heap_size = 1024
+
+[etl]
+pm_heap_size_per_task = 120
+pm_journal_size = 200
+task_num_limit = 6
+# PM_HEAP_SIZE_PER_TASK * 4 + 354
+pm_heap_size = 834
+
+[pred]
+pm_heap_size_per_task = 4
+pm_journal_size = 200
+task_num_limit = 6
+# PM_HEAP_SIZE_PER_TASK * 4 + 434
+pm_heap_size = 450
+
+[stats]
+pm_heap_size_per_task = 28
+pm_journal_size = 200
+task_num_limit = 6
+# PM_HEAP_SIZE_PER_TASK * 4 + 380
+pm_heap_size = 492
+
+[train]
+pm_heap_size_per_task = 28
+pm_journal_size = 200
+task_num_limit = 5
+# PM_HEAP_SIZE_PER_TASK * 2 + 500 + 216
+pm_heap_size = 772
+
+[etl."opt_list"]
+pm_heap_size_per_task = 120
+pm_journal_size = 64
+task_num_limit = 6
+# PM_HEAP_SIZE_PER_TASK * 4 + 354
+pm_heap_size = 834
+
+[pred."opt_list"]
+pm_heap_size_per_task = 4
+pm_journal_size = 64
+task_num_limit = 6
+# PM_HEAP_SIZE_PER_TASK * 4 + 434
+pm_heap_size = 450
+
+[stats."opt_list"]
+pm_heap_size_per_task = 28
+pm_journal_size = 64
+task_num_limit = 6
+# PM_HEAP_SIZE_PER_TASK * 4 + 380
+pm_heap_size = 492
+
+[train."opt_list"]
+pm_heap_size_per_task = 28
+pm_journal_size = 64
+task_num_limit = 5
+# PM_HEAP_SIZE_PER_TASK * 2 + 500 + 216
+pm_heap_size = 772
+
+[default]
+pm_heap_size_per_task = 256
+boot_pm_heap_size = 4
+pm_journal_size = 128
+task_num_limit = 3
+pm_heap_size = 512

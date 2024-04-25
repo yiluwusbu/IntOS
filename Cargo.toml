@@ -1,0 +1,74 @@
+[package]
+name = "intos"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+# default = ["crash_safe"]
+# default = ["crash_safe", "opt_list", "opt_tx_cache_space", "opt_loop_end"]
+# default = ["crash_safe", "opt_list", "profile_tx"]
+# default = ["opt_list"]
+# default = ["profile_tx"]
+# default = ["crash_safe", "opt_list","opt_tx_cache_space","opt_loop_end","riotbench_no_log_opt"]
+# default = ["crash_safe", "opt_tx_cache_space","opt_loop_end"]
+# default = ["crash_safe", "opt_list","opt_tx_cache_space","opt_loop_end", "msp430_use_timerb"]
+# default = ["opt_loop_end", "bench_kv_smaller_tx_sz"]
+default = ["crash_safe", "opt_list", "opt_loop_end", "opt_tx_cache_space",  "bench_kv_smaller_tx_sz", "verbose_os_info"]
+opt_list = []
+crash_safe = []
+power_failure = []
+profile_log = []
+profile_tx = []
+profile_list = []
+opt_tx_cache_space = []
+opt_loop_end = []
+debug_power_failure = []
+debug_bench = []
+bench_kv_smaller_tx_sz = []
+msp430_use_timerb = []
+riotbench_no_log_opt = []
+verbose_os_info=[]
+
+[target.thumbv7m-none-eabi.dependencies]
+cortex-m-semihosting = {version="0.5.0", features=[ "jlink-quirks" ]}
+
+[target.thumbv7em-none-eabihf.dependencies]
+cortex-m-semihosting = {version="0.5.0", features=[ "jlink-quirks" ]}
+
+[target.msp430-none-elf.dependencies]
+msp430 = { version = "0.4.0", features = ["critical-section-single-core"] }
+
+[dependencies]
+volatile-register = "0.2.1"
+macros = { path = "./macros"}
+vcell = "0.1.3"
+
+[build-dependencies]
+toml = "0.5.2"
+
+[workspace]
+members = [
+    "./",
+    "./macros",
+]
+
+#[profile.dev]
+#overflow-checks = false
+
+[profile.release]
+debug = true
+#opt-level = 2
+#opt-level = 1
+# opt-level = "s" # Size is more important than performance on MSP430.
+# codegen-units = 1 # Better size optimization.
+# lto = "fat" # _Much_ better size optimization.
+
+
+[profile.release-opt-size]
+inherits = "release"
+debug = true
+opt-level = "s" # Size is more important than performance on MSP430.
+codegen-units = 1 # Better size optimization.
+lto = "fat" # _Much_ better size optimization.

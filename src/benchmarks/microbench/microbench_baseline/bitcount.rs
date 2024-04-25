@@ -1,0 +1,209 @@
+use macros::app;
+
+use crate::{
+    bench_dbg_print, bench_println,
+    benchmarks::{
+        benchmark_end, benchmark_reset, benchmark_reset_pm, benchmark_start,
+        print_current_task_stats, print_wall_clock_time, set_benchmark_done, wall_clock_begin,
+        wall_clock_end,
+    },
+    declare_pm_loop_cnt, declare_pm_static, nv_for_loop, os_print, task,
+    user::{pvec::PVec, transaction},
+};
+
+static BITS: [u8; 256] = [
+    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, /* 0   - 15  */
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, /* 16  - 31  */
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, /* 32  - 47  */
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, /* 48  - 63  */
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, /* 64  - 79  */
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, /* 80  - 95  */
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, /* 96  - 111 */
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, /* 112 - 127 */
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, /* 128 - 143 */
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, /* 144 - 159 */
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, /* 160 - 175 */
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, /* 176 - 191 */
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, /* 192 - 207 */
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, /* 208 - 223 */
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, /* 224 - 239 */
+    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8, /* 240 - 255 */
+];
+
+fn recursive_bitcnt(x: u32) -> usize {
+    let idx: usize = (x & 0xFF) as usize;
+    let mut cnt: usize = BITS[idx] as usize;
+    let x = x >> 8;
+    if 0 != x {
+        cnt += recursive_bitcnt(x);
+    }
+    return cnt;
+}
+
+fn iter_opt_bitcnt(mut x: u32) -> usize {
+    let mut cnt = 0;
+    while x != 0 {
+        cnt += 1;
+        x = x & (x - 1);
+    }
+    return cnt;
+}
+
+fn enum_bitcnt(mut i: u32) -> usize {
+    i = ((i & 0xAAAAAAAA) >> 1) + (i & 0x55555555);
+    i = ((i & 0xCCCCCCCC) >> 2) + (i & 0x33333333);
+    i = ((i & 0xF0F0F0F0) >> 4) + (i & 0x0F0F0F0F);
+    i = ((i & 0xFF00FF00) >> 8) + (i & 0x00FF00FF);
+    i = ((i & 0xFFFF0000) >> 16) + (i & 0x0000FFFF);
+    return i as usize;
+}
+
+fn half_byte_table_bitcnt(x: u32) -> usize {
+    return (BITS[(x & 0x0000000F) as usize]
+        + BITS[((x & 0x000000F0) >> 4) as usize]
+        + BITS[((x & 0x00000F00) >> 8) as usize]
+        + BITS[((x & 0x0000F000) >> 12) as usize]
+        + BITS[((x & 0x000F0000) >> 16) as usize]
+        + BITS[((x & 0x00F00000) >> 20) as usize]
+        + BITS[((x & 0x0F000000) >> 24) as usize]
+        + BITS[((x & 0xF0000000) >> 28) as usize]) as usize;
+}
+
+fn byte_table_bitcnt(x: u32) -> usize {
+    return (BITS[(x & 0xFF) as usize]
+        + BITS[((x >> 8) & 0xFF) as usize]
+        + BITS[((x >> 16) & 0xFF) as usize]
+        + BITS[((x >> 24) & 0xFF) as usize]) as usize;
+}
+
+fn half_byte_recur_table_bitcnt(mut x: u32) -> usize {
+    let mut cnt = BITS[(x & 0x0000000F) as usize] as usize;
+    x >>= 4;
+    if x != 0 {
+        cnt += half_byte_recur_table_bitcnt(x);
+    }
+    return cnt;
+}
+
+fn shift_bitcnt(mut x: u32) -> usize {
+    let mut n: usize = 0;
+    for i in 0..32 {
+        n += ((x & 0x1) as usize);
+        x >>= 1;
+    }
+    return n;
+}
+
+const SEED: usize = 0xABCD;
+const ITER: usize = 50;
+
+declare_pm_loop_cnt!(FCNT, 0);
+declare_pm_loop_cnt!(ITER_CNT, 0);
+declare_pm_loop_cnt!(BENCH_ITER_CNT, 0);
+const BENCH_ITER: usize = 100;
+
+#[app]
+fn task_bitcount() {
+    benchmark_start();
+    nv_for_loop!(BENCH_ITER_CNT, i, 0 => BENCH_ITER, {
+        bitcount_runner(i);
+        benchmark_reset_pm();
+    });
+    benchmark_end();
+    set_benchmark_done();
+    print_current_task_stats();
+}
+
+fn bitcount_runner(iter: usize) {
+    let mut pvec = transaction::run_pure_sys(|t| {
+        let pvec = PVec::new(6, t);
+        pvec
+    });
+
+    nv_for_loop!(FCNT, f, 0 => 6, {
+        bench_dbg_print!("running f: {}", f);
+        pvec = transaction::run(move |j| {
+            pvec.push(0, j);
+            pvec
+        });
+        // bench_println!("new count pushed");
+        match f {
+            0 => {
+                transaction::run(|j| {
+                    let mut cnt = 0;
+                    for i in SEED..(SEED+ITER) {
+                        cnt += enum_bitcnt(i as u32);
+                    }
+                    *pvec.index_mut(f, j) += cnt;
+                });
+
+            },
+
+            1 => {
+                transaction::run(|j| {
+                    let mut cnt = 0;
+                    for i in SEED..(SEED+ITER) {
+                        cnt += half_byte_recur_table_bitcnt(i as u32);
+                    }
+                    *pvec.index_mut(f, j) += cnt;
+                });
+            },
+
+            2 => {
+                transaction::run(|j| {
+                    let mut cnt = 0;
+                    for i in SEED..(SEED+ITER) {
+                        cnt += shift_bitcnt(i as u32);
+                    }
+                    *pvec.index_mut(f, j) += cnt;
+                });
+            },
+
+            3 => {
+                transaction::run(|j| {
+                    let mut cnt = 0;
+                    for i in SEED..(SEED+ITER) {
+                        cnt += iter_opt_bitcnt(i as u32);
+                    }
+                    *pvec.index_mut(f, j) += cnt;
+                });
+            },
+
+            4 => {
+                transaction::run(|j| {
+                    let mut cnt = 0;
+                    for i in SEED..(SEED+ITER) {
+                        cnt += recursive_bitcnt(i as u32);
+                    }
+                    *pvec.index_mut(f, j) += cnt;
+                });
+            },
+
+            5 => {
+                transaction::run(|j| {
+                    let mut cnt = 0;
+                    for i in SEED..(SEED+ITER) {
+                        cnt += half_byte_table_bitcnt(i as u32);
+                    }
+                    *pvec.index_mut(f, j) += cnt;
+                });
+            }
+
+            _ => {
+               os_print!("unimplmented!");
+            }
+        }
+
+    });
+    // bench_println!("Finished!");
+
+    let mut cnt_this = 0;
+    for c in pvec.iter() {
+        cnt_this += c;
+    }
+    bench_dbg_print!("iter = {}, bitcnt = {}", iter, cnt_this);
+}
+
+pub fn register() {
+    task::register_app_no_param("bitcount", 1, task_bitcount);
+}

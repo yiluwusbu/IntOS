@@ -1,0 +1,9 @@
+target/
+tmp/
+__pycache__/
+*.s
+out
+*.elf
+*.o
+.vscode/
+*.inc

@@ -294,7 +294,7 @@ fn main() {
 
 To run the app, you can just use the compile.py script. Here we use qemu as an example.
 ```console
-./compily.py --board qemu --app demo --run
+./compile.py --board qemu --app demo --run
 ```
 
 For more examples, please refer to [example.rs](./src/tests/examples.rs) 

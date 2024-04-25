@@ -19,7 +19,7 @@ Currently, we support three platforms: QEMU, Apollo 4 Blue Plus, MSP430Fr5994. F
 - [Detailed Instructions](#detailed-instrs)
     * [Instructions for QEMU](#how-to-qemu)
     * [Instructions for MSP430FR5994](#how-to-msp)
-    * [Instructions for APOLLP4](#how-to-apollo)
+    * [Instructions for APOLLO4](#how-to-apollo)
     * [Write Your Own Application](#how-to-write-an-app)
 - [API Reference](#api-reference)
 
